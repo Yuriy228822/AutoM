@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Личный кабинет</title>
+  <style>
+    /* Простейшие стили для личного кабинета */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f7f7f7;
+      font-family: Arial, sans-serif;
+    }
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin-left: 15px;
+    }
+    .container {
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Личный кабинет</h1>
+    <nav>
+      <a href="/">Главная</a> | <a href="/logout">Выход</a>
+    </nav>
+  </header>
+  <div class="container">
+    <h2>Добро пожаловать, {{ .Username }}!</h2>
+    <p>Email: {{ .Email }}</p>
+    <!-- Здесь можно добавить дополнительные разделы, например: изменения профиля, историю заказов и т.д. -->
+  </div>
+</body>
+</html>

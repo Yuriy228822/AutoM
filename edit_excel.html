@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Редактирование Excel данных</title>
+  <style>
+    table, th, td {
+      border: 1px solid #333;
+      border-collapse: collapse;
+      padding: 4px;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+<h2>Проверьте и исправьте данные из Excel</h2>
+<form action="/admin/save_excel_edits" method="POST">
+  <table>
+    {{range $rowIndex, $row := .}}
+      <tr>
+        {{range $colIndex, $cell := $row}}
+          <td>
+            <input type="text" name="cell_{{ $rowIndex }}_{{ $colIndex }}" value="{{ $cell }}">
+          </td>
+        {{end}}
+      </tr>
+    {{end}}
+  </table>
+  <br>
+  <button type="submit">Сохранить в базу</button>
+</form>
+</body>
+</html>

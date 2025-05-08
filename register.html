@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Регистрация пользователя</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Основные стили */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f7f7f7;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: #fff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    input {
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      margin: 12px 0;
+      padding: 12px;
+      background: #007BFF;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .message {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 10px;
+      color: red;
+    }
+    @media (max-width: 480px) {
+      .container { padding: 20px; }
+      input, button { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Регистрация</h1>
+    <!-- Контейнер для сообщений об ошибках или успехе -->
+    <div id="message" class="message"></div>
+    <form id="registerForm">
+      <input type="text" name="username" placeholder="Имя пользователя" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Пароль" required>
+      <input type="password" name="confirmPassword" placeholder="Подтвердите пароль" required>
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+    <p style="text-align:center;font-size:14px;">Уже зарегистрированы? <a href="login">Войти</a></p>
+  </div>
+  
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const messageEl = document.getElementById("message");
+      messageEl.textContent = "";
+
+      // Собираем данные из формы
+      const formData = new FormData(this);
+      const username = formData.get("username").trim();
+      const email = formData.get("email").trim();
+      const password = formData.get("password");
+      const confirmPassword = formData.get("confirmPassword");
+
+      // Клиентская проверка
+      if (password !== confirmPassword) {
+        messageEl.textContent = "Пароли не совпадают!";
+        return;
+      }
+
+      const data = { username, email, password };
+
+      // Отправляем POST-запрос на API регистрации
+      fetch("/api/v1/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (response.status === 201) {
+          messageEl.style.color = "green";
+          messageEl.textContent = "Регистрация прошла успешно!";
+          // По желанию можно перенаправить пользователя на страницу авторизации.
+          setTimeout(() => { window.location.href = "login"; }, 1500);
+        } else {
+          return response.text().then(text => {
+            throw new Error(text);
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Ошибка при регистрации:", error);
+        messageEl.style.color = "red";
+        messageEl.textContent = "Ошибка регистрации: " + error.message;
+      });
+    });
+  </script>
+</body>
+</html>

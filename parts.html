@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Автозапчасти</title>
+</head>
+<body>
+    <h1>Список автозапчастей</h1>
+    <ul>
+        {{range .}}
+            <li>{{.}}</li>
+        {{end}}
+    </ul>
+    <a href="/">Вернуться на главную</a>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Наши товары</title>
+  <style>
+    /* Общая стилизация страницы */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      font-family: Arial, sans-serif;
+    }
+    /* Шапка с заголовком и кнопками авторизации/регистрации */
+    header {
+      width: 100%;
+      background-color: #333;
+      color: #fff;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .auth-buttons button {
+      padding: 8px 16px;
+      border: none;
+      background-color: #e10600;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .auth-buttons button:hover {
+      background-color: #c00500;
+    }
+    /* Основной контейнер для содержимого */
+    .container {
+      padding: 20px;
+    }
+    /* Стилизация списка товаров */
+    .product-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .product {
+      background-color: #fff;
+      width: calc(25% - 20px);
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 15px;
+      text-align: center;
+    }
+    .product img {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+    .product h3 {
+      font-size: 18px;
+      color: #333;
+      margin: 10px 0 5px;
+    }
+    .product p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      .product {
+        width: calc(50% - 20px);
+      }
+    }
+    @media (max-width: 480px) {
+      .product {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Шапка страницы -->
+  <header>
+    <h1>Наши товары</h1>
+    <div class="auth-buttons">
+      <button onclick="window.location.href='/register'">Регистрация</button>
+      <button onclick="window.location.href='/login'">Авторизация</button>
+    </div>
+  </header>
+
+  <!-- Основной контейнер -->
+  <div class="container">
+    <div id="product-list" class="product-list">
+      <!-- Здесь динамически появятся товары -->
+    </div>
+  </div>
+
+  <script>
+    // Функция запроса списка товаров из API.
+    fetch("/api/v1/parts")
+      .then(response => response.json())
+      .then(data => {
+        const productList = document.getElementById("product-list");
+        // Если товаров нет, выводим сообщение
+        if (!data.length) {
+          productList.innerHTML = "<p>Нет товаров для отображения.</p>";
+          return;
+        }
+        // Проходим по каждому товару и создаем HTML-разметку.
+        data.forEach(part => {
+          const item = document.createElement("div");
+          item.className = "product";
+          // Если в товаре отсутствует URL изображения, используем placeholder.
+          const imageUrl = part.image_url || "https://via.placeholder.com/200";
+          item.innerHTML = `
+            <img src="${imageUrl}" alt="${part.name}">
+            <h3>${part.name}</h3>
+            <p>${part.description}</p>
+            <p><strong>Цена:</strong> ${part.price} ₽</p>
+          `;
+          productList.appendChild(item);
+        });
+      })
+      .catch(error => {
+        console.error("Ошибка получения товаров:", error);
+        document.getElementById("product-list").innerHTML = "<p>Ошибка загрузки товаров.</p>";
+      });
+  </script>
+</body>
+</html>

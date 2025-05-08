@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ панель автозапчастей – Расширенный вариант</title>
+  <style>
+    /* Основные стили страницы */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background: #007bff;
+      color: #fff;
+      padding: 15px 10px;
+      text-align: center;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    .section {
+      margin: 20px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    input, button, select {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .toggle-btn {
+      margin-left: 10px;
+      width: auto;
+    }
+    /* Стили для предварительного просмотра Excel файла */
+    #excelPreview table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    #excelPreview th, #excelPreview td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: left;
+    }
+    #excelPreview th {
+      background-color: #eee;
+    }
+  </style>
+  <!-- Подключение SheetJS для работы с Excel файлами -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Админ панель автозапчастей</h1>
+    <nav>
+      <a href="/">Главная</a> |
+      <a href="/logout">Выход</a>
+    </nav>
+  </header>
+
+<!-- Раздел для управления группами -->
+<section id="groupsSection" class="section">
+  <h2>Группы</h2>
+  <button onclick="Admin.loadGroups()">Загрузить группы</button>
+  <button class="toggle-btn" onclick="Admin.toggleCollapse('groupsList', this)">Свернуть</button>
+  <div id="groupsList"></div>
+  <!-- Форма добавления группы -->
+  <h3>Добавить новую группу</h3>
+  <form id="addGroupForm">
+    <input type="text" name="name" placeholder="Название группы" required>
+    <button type="submit">Добавить группу</button>
+  </form>
+  <!-- Форма редактирования группы -->
+  <h3>Редактировать группу</h3>
+  <form id="editGroupForm">
+    <input type="number" name="id" placeholder="ID группы" required>
+    <input type="text" name="name" placeholder="Новое название группы" required>
+    <button type="submit">Сохранить изменения</button>
+  </form>
+</section>
+
+<!-- Раздел для управления категориями -->
+<section id="categoriesSection" class="section">
+  <h2>Категории</h2>
+  <button onclick="Admin.loadCategories()">Загрузить категории</button>
+  <button class="toggle-btn" onclick="Admin.toggleCollapse('categoriesList', this)">Свернуть</button>
+  <div id="categoriesList"></div>
+  <h3>Добавить новую категорию</h3>
+  <form id="addCategoryForm">
+    <label for="categoryGroupId">Группа:</label>
+    <select id="categoryGroupId" name="group_id" required>
+      <option value="">--Выберите группу--</option>
+    </select>
+    <input type="text" name="name" placeholder="Название категории" required>
+    <input type="text" name="description" placeholder="Описание">
+    <button type="submit">Добавить категорию</button>
+  </form>
+</section>
+
+<!-- Раздел для управления подкатегориями -->
+<section id="subcategoriesSection" class="section">
+  <h2>Подкатегории</h2>
+  <button onclick="Admin.loadSubcategories()">Загрузить подкатегории</button>
+  <button class="toggle-btn" onclick="Admin.toggleCollapse('subcategoriesList', this)">Свернуть</button>
+  <div id="subcategoriesList"></div>
+  <h3>Добавить новую подкатегорию</h3>
+  <form id="addSubcategoryForm">
+    <label for="subcategoryCategoryId">Категория:</label>
+    <select id="subcategoryCategoryId" name="category_id" required>
+      <option value="">--Выберите категорию--</option>
+    </select>
+    <input type="text" name="name" placeholder="Название подкатегории" required>
+    <button type="submit">Добавить подкатегорию</button>
+  </form>
+</section>
+
+<!-- Раздел для управления запчастями -->
+<section id="partsSection" class="section">
+  <h2>Запчасти</h2>
+  <button onclick="Admin.loadParts()">Загрузить запчасти</button>
+  <button class="toggle-btn" onclick="Admin.toggleCollapse('partsList', this)">Свернуть</button>
+  <div id="partsList"></div>
+  <h3>Добавить новую запчасть</h3>
+  <form id="addPartForm">
+    <label for="partSubcategoryId">Подкатегория:</label>
+    <select id="partSubcategoryId" name="subcategory_id" required>
+      <option value="">--Выберите подкатегорию--</option>
+    </select>
+    <input type="text" name="name" placeholder="Название запчасти" required>
+    <input type="number" name="price" step="0.01" placeholder="Цена" required>
+    <input type="number" name="quantity" placeholder="Количество" required>
+    <input type="text" name="description" placeholder="Описание">
+    <input type="url" name="image_url" placeholder="URL изображения (если есть)">
+    <button type="submit">Добавить запчасть</button>
+  </form>
+</section>
+
+<!-- Раздел для управления пользователями -->
+<section id="usersSection" class="section">
+  <h2>Пользователи</h2>
+  <button onclick="Admin.loadUsers()">Загрузить пользователей</button>
+  <button class="toggle-btn" onclick="Admin.toggleCollapse('usersList', this)">Свернуть</button>
+  <div id="usersList"></div>
+  <h3>Добавить нового пользователя</h3>
+  <form id="addUserForm">
+    <input type="text" name="username" placeholder="Имя пользователя" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Пароль" required>
+    <button type="submit">Добавить пользователя</button>
+  </form>
+  <h3>Редактировать пользователя</h3>
+  <form id="editUserForm">
+    <input type="number" name="id" placeholder="ID пользователя" required>
+    <input type="text" name="username" placeholder="Имя пользователя" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Новый пароль (если требуется)">
+    <button type="submit">Сохранить изменения</button>
+  </form>
+</section>
+
+<!-- Раздел для назначения элементов -->
+<section id="assignmentSection" class="section">
+  <h2>Назначение: Группы → Подкатегории → Запчасти</h2>
+  <div>
+    <label for="selectGroup">Выберите группу:</label>
+    <select id="selectGroup" onchange="Admin.loadSubcategoriesForGroup()">
+      <option value="">--Выберите группу--</option>
+    </select>
+  </div>
+  <div>
+    <label for="selectSubgroup">Выберите подкатегорию:</label>
+    <select id="selectSubgroup" onchange="Admin.loadPartsForSubgroup()">
+      <option value="">--Выберите подкатегорию--</option>
+    </select>
+  </div>
+  <div id="assignedParts">
+    <h3>Запчасти для выбранной подкатегории</h3>
+  </div>
+  <h3>Добавить новую запчасть в выбранную подкатегорию</h3>
+  <form id="assignPartForm">
+    <input type="text" name="name" placeholder="Название запчасти" required>
+    <input type="number" step="0.01" name="price" placeholder="Цена" required>
+    <input type="number" name="quantity" placeholder="Количество" required>
+    <input type="text" name="description" placeholder="Описание">
+    <input type="url" name="image_url" placeholder="URL изображения (если есть)">
+    <button type="submit">Добавить запчасть</button>
+  </form>
+</section>
+
+<!-- Раздел для импорта Excel-файлов с предварительным просмотром -->
+<section id="importExcelSection" class="section">
+  <h2>Импорт товаров из Excel</h2>
+  <form id="excelImportForm" action="/admin/import" method="post" enctype="multipart/form-data">
+    <label for="excel_file">Выберите Excel файл:</label>
+    <input type="file" name="excel_file" id="excel_file" accept=".xls,.xlsx" onchange="Admin.previewExcelFile()">
+    <button type="submit">Импортировать товары</button>
+  </form>
+  <h3>Предварительный просмотр файла</h3>
+  <div id="excelPreview" style="overflow-x:auto;"></div>
+</section>
+
+
+  <!-- Скрипты: все функции объявлены внутри объекта Admin -->
+  <script>
+    const Admin = {
+      previewExcelFile: function() {
+        const fileInput = document.getElementById("excel_file");
+        const file = fileInput.files[0];
+        if (!file) {
+          alert("Пожалуйста, выберите Excel файл для предварительного просмотра.");
+          return;
+        }
+        console.log("Начало чтения файла: " + file.name);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            console.log("Workbook загружен. Найдено листов:", workbook.SheetNames.length);
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const htmlstr = XLSX.utils.sheet_to_html(worksheet, { editable: true });
+            document.getElementById("excelPreview").innerHTML = htmlstr;
+            console.log("Предварительный просмотр для листа '" + sheetName + "' успешно сгенерирован.");
+          } catch (err) {
+            console.error("Ошибка при чтении или конвертации Excel файла:", err);
+            alert("Ошибка при предварительном просмотре файла: " + err.message);
+          }
+        };
+        reader.onerror = function(err) {
+          console.error("Ошибка чтения файла:", err);
+          alert("Ошибка при чтении файла.");
+        };
+        reader.readAsArrayBuffer(file);
+      },
+
+      loadCategories: function() {
+        console.log("Запрос категорий...");
+        fetch('/api/v1/categories')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Статус ошибки: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("Получены категории:", data);
+            Admin.showResponse('categoriesList', data, 'categories');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки категорий:", error);
+            alert("Ошибка загрузки категорий: " + error.message);
+          });
+      },
+
+      loadParts: function() {
+        console.log("Запрос запчастей...");
+        fetch('/api/v1/parts')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Статус ошибки: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("Получены запчасти:", data);
+            Admin.showResponse('partsList', data, 'parts');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки запчастей:", error);
+            alert("Ошибка загрузки запчастей: " + error.message);
+          });
+      },
+
+      loadUsers: function() {
+        console.log("Запрос пользователей...");
+        fetch('/api/v1/users')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Статус ошибки: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("Получены пользователи:", data);
+            Admin.showResponse('usersList', data, 'users');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки пользователей:", error);
+            alert("Ошибка загрузки пользователей: " + error.message);
+          });
+      },
+
+      loadGroups: function() {
+        console.log("Запрос групп...");
+        fetch('/api/v1/groups')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Статус ошибки: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("Получены группы:", data);
+            Admin.showResponse('groupsList', data, 'groups');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки групп:", error);
+            alert("Ошибка загрузки групп: " + error.message);
+          });
+
+          // Заполнение выпадающих списков для выбора группы в формах подкатегорий
+          fetch('/api/v1/groups')
+            .then(response => response.json())
+            .then(data => {
+              let htmlOptions = '<option value="">--Выберите группу--</option>';
+              data.forEach(group => {
+                htmlOptions += `<option value="${group.id}">${group.name}</option>`;
+              });
+              document.getElementById("selectGroupForSubgroup").innerHTML = htmlOptions;
+              document.getElementById("groupSelectInAdd").innerHTML = htmlOptions;
+              document.getElementById("editGroupId").innerHTML = htmlOptions;
+            })
+            .catch(error => { console.error(error); });
+      },
+
+      loadSubcategories: function() {
+        console.log("Запрос подкатегорий...");
+        fetch('/api/v1/subcategories')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Статус ошибки: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log("Получены подкатегории:", data);
+            Admin.showResponse('subcategoriesList', data, 'subcategories');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки подкатегорий:", error);
+            alert("Ошибка загрузки подкатегорий: " + error.message);
+          });
+      },
+
+      loadSubcategoriesForGroup: function() {
+        const groupId = document.getElementById("selectGroupForSubgroup").value;
+        if (!groupId) {
+          document.getElementById("subcategoriesList").innerHTML = "<p>Выберите группу для просмотра подкатегорий.</p>";
+          return;
+        }
+        console.log("Загрузка подкатегорий для группы ID:", groupId);
+        fetch(`/api/v1/subcategories?group_id=${groupId}`)
+          .then(response => response.json())
+          .then(data => {
+            Admin.showResponse('subcategoriesList', data, 'subcategories');
+          })
+          .catch(error => {
+            alert("Ошибка загрузки подкатегорий: " + error.message);
+          });
+      },
+
+      loadPartsForSubgroup: function() {
+        const subgroupId = document.getElementById('selectSubgroup').value;
+        const container = document.getElementById('assignedParts');
+        if (!subgroupId) {
+          container.innerHTML = "<p>Пожалуйста, выберите подкатегорию для просмотра запчастей.</p>";
+          return;
+        }
+        console.log("Загрузка запчастей для подкатегории ID:", subgroupId);
+        fetch(`/api/v1/parts?subgroup_id=${subgroupId}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Ошибка загрузки запчастей, статус: " + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            Admin.showResponse('assignedParts', data, 'parts');
+          })
+          .catch(error => {
+            console.error("Ошибка загрузки запчастей:", error);
+            alert("Ошибка загрузки запчастей: " + error.message);
+          });
+      },
+
+      showResponse: function(containerId, data, resource) {
+        console.log("Отображение данных для ресурса: " + resource, data);
+        let html = "";
+        if (data && data.length > 0) {
+          html += "<table><tr>";
+          const keys = Object.keys(data[0]);
+          keys.forEach(key => {
+            html += "<th>" + key.charAt(0).toUpperCase() + key.slice(1) + "</th>";
+          });
+          html += "<th>Действия</th></tr>";
+          data.forEach(item => {
+            html += "<tr>";
+            keys.forEach(key => {
+              html += "<td>" + item[key] + "</td>";
+            });
+            let actions = `<td><button onclick='Admin.deleteItem("` + resource + `", ${item.id})'>Удалить</button>`;
+            actions += "</td>";
+            html += actions + "</tr>";
+          });
+          html += "</table>";
+        } else {
+          html = "<p>Нет данных</p>";
+        }
+        document.getElementById(containerId).innerHTML = html;
+      },
+
+      deleteItem: function(resource, id) {
+        if (confirm(`Вы уверены, что хотите удалить ${resource.slice(0, -1)} с ID ${id}?`)) {
+          console.log(`Удаляем запись ресурса ${resource} с ID ${id}...`);
+          fetch(`/api/v1/${resource}/${id}`, { method: 'DELETE' })
+            .then(response => {
+              if (response.ok) {
+                console.log(`Запись ${resource} с ID ${id} успешно удалена.`);
+                alert("Запись удалена!");
+                if (resource === "categories") Admin.loadCategories();
+                else if (resource === "subcategories") Admin.loadSubcategories();
+                else if (resource === "parts") Admin.loadParts();
+                else if (resource === "users") Admin.loadUsers();
+                else if (resource === "groups") Admin.loadGroups();
+              } else {
+                throw new Error("Ошибка удаления, статус: " + response.status);
+              }
+            })
+            .catch(error => {
+              console.error("Ошибка при удалении записи:", error);
+              alert("Ошибка при удалении записи: " + error.message);
+            });
+        }
+      },
+
+      addRecord: function(resource, formId, loadFunction) {
+        const form = document.getElementById(formId);
+        const formData = new FormData(form);
+        let data = {};
+        formData.forEach((value, key) => {
+          data[key] = value;
+        });
+        console.log(`Добавление записи в ресурс ${resource}:`, data);
+        fetch(`/api/v1/${resource}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(response => {
+          if (response.status === 201) {
+            console.log(`Запись в ${resource} успешно добавлена.`);
+            alert("Запись успешно добавлена!");
+            if (typeof loadFunction === "function") loadFunction();
+            form.reset();
+          } else {
+            return response.text().then(text => { throw new Error(text); });
+          }
+        })
+        .catch(error => {
+          console.error("Ошибка при добавлении записи:", error);
+          alert("Ошибка при добавлении записи: " + error.message);
+        });
+      },
+
+      toggleCollapse: function(containerId, btn) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (container.style.display === "none" || container.style.display === "") {
+          container.style.display = "block";
+          btn.textContent = "Свернуть";
+        } else {
+          container.style.display = "none";
+          btn.textContent = "Развернуть";
+        }
+      }
+    };
+
+    /************** Обработчики форм **************/
+    // Форма добавления категории
+    document.getElementById("addCategoryForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      Admin.addRecord("categories", "addCategoryForm", Admin.loadCategories);
+    });
+    // Форма добавления подкатегории
+    document.getElementById("addSubcategoryForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      Admin.addRecord("subcategories", "addSubcategoryForm", Admin.loadSubcategories);
+    });
+    // Форма добавления запчасти
+    document.getElementById("addPartForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      Admin.addRecord("parts", "addPartForm", Admin.loadParts);
+    });
+    // Форма добавления пользователя
+    document.getElementById("addUserForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      Admin.addRecord("users", "addUserForm", Admin.loadUsers);
+    });
+    // Форма редактирования пользователя
+    document.getElementById("editUserForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const userData = {
+        username: formData.get("username"),
+        email: formData.get("email"),
+        password: formData.get("password")
+      };
+      const userId = formData.get("id");
+      console.log("Обновление пользователя с ID:", userId, "данными:", userData);
+      fetch(`/api/v1/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log("Пользователь обновлен успешно.");
+          alert("Данные пользователя обновлены!");
+          Admin.loadUsers();
+          this.reset();
+        } else {
+          return response.text().then(text => { throw new Error(text); });
+        }
+      })
+      .catch(error => {
+        console.error("Ошибка при обновлении данных пользователя:", error);
+        alert("Ошибка при обновлении данных пользователя: " + error.message);
+      });
+    });
+    // Форма редактирования группы
+    document.getElementById("editGroupForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const groupData = { name: formData.get("name") };
+      const groupId = formData.get("id");
+      console.log("Обновление группы с ID:", groupId, "данными:", groupData);
+      fetch(`/api/v1/groups/${groupId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupData)
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log("Группа обновлена успешно.");
+          alert("Данные группы обновлены!");
+          Admin.loadGroups();
+          this.reset();
+        } else {
+          return response.text().then(text => { throw new Error(text); });
+        }
+      })
+      .catch(error => {
+        console.error("Ошибка при обновлении данных группы:", error);
+        alert("Ошибка при обновлении данных группы: " + error.message);
+      });
+    });
+    // Форма редактирования запчасти
+    document.getElementById("editPartForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const partData = {
+        name: formData.get("name"),
+        price: formData.get("price"),
+        quantity: formData.get("quantity"),
+        description: formData.get("description")
+      };
+      const partId = formData.get("id");
+      console.log("Обновление запчасти с ID:", partId, "данными:", partData);
+      fetch(`/api/v1/parts/${partId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partData)
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log("Запчасть обновлена успешно.");
+          alert("Данные запчасти обновлены!");
+          Admin.loadParts();
+          this.reset();
+        } else {
+          return response.text().then(text => { throw new Error(text); });
+        }
+      })
+      .catch(error => {
+        console.error("Ошибка при обновлении данных запчасти:", error);
+        alert("Ошибка при обновлении данных запчасти: " + error.message);
+      });
+    });
+    // Форма добавления запчасти в подкатегорию (назначение)
+    document.getElementById("assignPartForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const subgroupId = document.getElementById('selectSubgroup').value;
+      if (!subgroupId) {
+        alert("Пожалуйста, выберите подкатегорию для назначения запчасти.");
+        return;
+      }
+      const formData = new FormData(this);
+      let partData = {};
+      formData.forEach((value, key) => {
+        partData[key] = value;
+      });
+      partData.subgroup_id = subgroupId;
+      console.log("Добавление запчасти в подкатегорию с ID:", subgroupId, "данными:", partData);
+      fetch(`/api/v1/parts`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(partData)
+      })
+      .then(response => {
+        if (response.status === 201) {
+          console.log("Запчасть успешно добавлена в подкатегорию.");
+          alert("Запчасть успешно добавлена!");
+          Admin.loadPartsForSubgroup();
+          this.reset();
+        } else {
+          return response.text().then(text => { throw new Error(text); });
+        }
+      })
+      .catch(error => {
+        console.error("Ошибка при добавлении запчасти:", error);
+        alert("Ошибка при добавлении запчасти: " + error.message);
+      });
+    });
+// Инициализация при загрузке страницы
+document.addEventListener("DOMContentLoaded", function () {
+  // Загрузка всех данных
+  Admin.loadGroups();
+  Admin.loadCategories();
+  Admin.loadSubcategories();
+
+  // Заполнение всех списков групп
+  fetch('/api/v1/groups')
+    .then(response => response.json())
+    .then(data => {
+      let options = '<option value="">--Выберите группу--</option>';
+      data.forEach(group => {
+        options += `<option value="${group.group_id}">${group.name}</option>`;
+      });
+      const ids = [
+        "selectGroup",
+        "selectGroupForSubgroup",
+        "groupSelectInAdd",
+        "editGroupId",
+        "categoryGroupId"
+      ];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = options;
+      });
+    })
+    .catch(error => console.error("Ошибка загрузки групп:", error));
+
+  // Заполнение всех списков категорий
+  fetch('/api/v1/categories')
+    .then(response => response.json())
+    .then(data => {
+      let options = '<option value="">--Выберите категорию--</option>';
+      data.forEach(category => {
+        options += `<option value="${category.category_id}">${category.name}</option>`;
+      });
+      const catSelect = document.getElementById("subcategoryCategoryId");
+      if (catSelect) catSelect.innerHTML = options;
+    })
+    .catch(error => console.error("Ошибка загрузки категорий:", error));
+
+  // Заполнение всех списков подкатегорий
+  fetch('/api/v1/subcategories')
+    .then(response => response.json())
+    .then(data => {
+      let options = '<option value="">--Выберите подкатегорию--</option>';
+      data.forEach(sub => {
+        options += `<option value="${sub.subcategory_id}">${sub.name}</option>`;
+      });
+      const subIds = ["partSubcategoryId", "selectSubgroup"];
+      subIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = options;
+      });
+    })
+    .catch(error => console.error("Ошибка загрузки подкатегорий:", error));
+});
+  </script>
+</body>
+</html>

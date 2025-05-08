@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Авторизация пользователя</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Общие стили */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f7f7f7;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #fff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    input {
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      margin: 12px 0;
+      padding: 12px;
+      background: #28a745;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .message {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    @media (max-width: 480px) {
+      .container { padding: 20px; }
+      input, button { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Авторизация</h1>
+    <!-- Контейнер для сообщений -->
+    <div id="message" class="message"></div>
+    <form id="loginForm">
+      <input type="text" name="username" placeholder="Имя пользователя" required>
+      <input type="password" name="password" placeholder="Пароль" required>
+      <button type="submit">Войти</button>
+    </form>
+    <p style="text-align:center; font-size:14px;">Нет аккаунта? <a href="register">Зарегистрируйтесь</a></p>
+  </div>
+  
+  <script>
+    // Функция-обработчик для авторизации
+    async function handleLogin(event) {
+      event.preventDefault();
+      const messageEl = document.getElementById("message");
+      messageEl.textContent = ""; // Очищаем сообщение
+  
+      try {
+        // Собираем данные из формы
+        const formData = new FormData(event.target);
+        const data = {
+          username: formData.get("username").trim(),
+          password: formData.get("password")
+        };
+  
+        // Выполняем POST-запрос на API авторизации
+        // Убедитесь, что URL запроса ("/api/v1/login") совпадает с маршрутом, который отдает JSON
+        const response = await fetch("/api/v1/login", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+  
+        // Проверяем заголовок ответа, чтобы убедиться, что сервер вернул JSON
+        const contentType = response.headers.get("Content-Type") || "";
+        if (!contentType.includes("application/json")) {
+          // Если возвращается HTML, читаем текст и выбрасываем ошибку
+          const htmlText = await response.text();
+          throw new Error("Ожидался JSON, получен HTML: " + htmlText);
+        }
+  
+        // Если ответ не OK, пробрасываем ошибку с текстом ответа
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error("Ответ не OK: " + errorText);
+        }
+  
+        // Парсим JSON-ответ
+        const user = await response.json();
+        messageEl.style.color = "green";
+        messageEl.textContent = "Авторизация успешна! Добро пожаловать, " + user.username;
+        
+        // Через 2 секунды перенаправляем на главную страницу
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+        
+      } catch (error) {
+        console.error("Ошибка при авторизации:", error);
+        messageEl.style.color = "red";
+        messageEl.textContent = "Ошибка авторизации: " + (error.message || "Не удалось авторизоваться");
+      }
+    }
+  
+    // Ждем загрузки DOM и добавляем обработчик события для формы
+    document.addEventListener("DOMContentLoaded", () => {
+      const loginForm = document.getElementById("loginForm");
+      loginForm.addEventListener("submit", handleLogin);
+    });
+  </script>
+  
+</body>
+</html>
